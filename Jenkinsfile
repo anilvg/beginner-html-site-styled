@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', 
+                git branch: 'gh-pages', 
                     url: 'https://github.com/anilvg/beginner-html-site-styled.git'
             }
         }
