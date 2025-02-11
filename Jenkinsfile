@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+    }
     stages {
         stage('Clone Repository') {
             steps {
@@ -8,14 +11,14 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
+                sh 'ls -la'  // Debugging step
                 sh 'docker build -t anilvg/website:latest .'
             }
         }
-        stage('Push Docker Image') {
+        stage('Push to DockerHub') {
             steps {
-                withDockerRegistry([credentialsId: '46f234f6-70a8-4e6f-9b62-6723df022e2d', url: '']) {
-                    sh 'docker push anilvg/website:latest'
-                }
+                sh 'docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PSW}'
+                sh 'docker push anilvg/website:latest'
             }
         }
         stage('Deploy to Kubernetes') {
