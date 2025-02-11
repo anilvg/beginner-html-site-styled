@@ -11,10 +11,11 @@ pipeline {
                 sh 'docker build -t anilvg/website:latest .'
             }
         }
-        stage('Push to DockerHub') {
+        stage('Push Docker Image') {
             steps {
-                sh 'docker login -u anilvg -p cipahane_V5'
-                sh 'docker push anilvg/website:latest'
+                withDockerRegistry([credentialsId: '46f234f6-70a8-4e6f-9b62-6723df022e2d', url: '']) {
+                    sh 'docker push anilvg/website:latest'
+                }
             }
         }
         stage('Deploy to Kubernetes') {
