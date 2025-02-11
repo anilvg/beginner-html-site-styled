@@ -1,31 +1,66 @@
 pipeline {
     agent any
+
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKER_IMAGE = "anilvg/website:latest"
+        DOCKER_CREDENTIALS_ID = "46f234f6-70a8-4e6f-9b62-6723df022e2d"
+        KUBECONFIG_CREDENTIALS_ID = "kubeconfig-jenkins"
     }
+
+    options {
+        skipDefaultCheckout()
+        disableConcurrentBuilds()
+        preserveStashes()
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/anilvg/beginner-html-site-styled.git'
+                git branch: 'gh-pages', 
+                    credentialsId: 'anilvg', 
+                    url: 'https://github.com/anilvg/beginner-html-site-styled.git'
             }
         }
+
         stage('Build Docker Image') {
             steps {
-                sh 'ls -la'  // Debugging step
-                sh 'docker build -t anilvg/website:latest .'
+                script {
+                    if (!fileExists('Dockerfile')) {
+                        error("Dockerfile not found in repository. Please add a valid Dockerfile.")
+                    }
+                    sh 'docker build -t $DOCKER_IMAGE .'
+                }
             }
         }
-        stage('Push to DockerHub') {
+
+        stage('Push Docker Image') {
             steps {
-                sh 'docker login -u ${DOCKERHUB_CREDENTIALS_USR} -p ${DOCKERHUB_CREDENTIALS_PSW}'
-                sh 'docker push anilvg/website:latest'
+                script {
+                    withDockerRegistry([credentialsId: 46f234f6-70a8-4e6f-9b62-6723df022e2d , url: ""]) {
+                        sh 'docker push $DOCKER_IMAGE'
+                    }
+                }
             }
         }
+
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f deployment.yaml'
-                sh 'kubectl apply -f service.yaml'
+                script {
+                    withCredentials([file(credentialsId: kubeconfig-jenkins, variable: 'KUBECONFIG')]) {
+                        sh 'kubectl apply -f deployment.yaml'
+                        sh 'kubectl apply -f service.yaml'
+                    }
+                }
             }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment successful! Access the website at http://3.16.28.96:30010"
+        }
+        failure {
+            echo "Pipeline failed! Check logs for more details."
         }
     }
 }
