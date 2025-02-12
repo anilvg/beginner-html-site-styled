@@ -6,8 +6,6 @@ pipeline {
         K8S_DEPLOYMENT = 'website-deployment'
         K8S_NAMESPACE = 'default'
         GIT_REPO = 'https://github.com/anilvg/beginner-html-site-styled.git'
-        DOCKER_USERNAME = credentials('anilvg')
-        DOCKER_PASSWORD = credentials('cipahane_V5')
     }
 
     stages {
@@ -19,10 +17,8 @@ pipeline {
 
         stage('Login to DockerHub') {
             steps {
-                script {
-                    sh '''
-                    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-                    '''
+                withDockerRegistry([credentialsId: '46f234f6-70a8-4e6f-9b62-6723df022e2d', url: '']) {
+                    sh 'echo "Docker Login Successful!"'
                 }
             }
         }
