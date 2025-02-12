@@ -6,6 +6,8 @@ pipeline {
         K8S_DEPLOYMENT = 'website-deployment'
         K8S_NAMESPACE = 'default'
         GIT_REPO = 'https://github.com/anilvg/beginner-html-site-styled.git'
+        DOCKER_USERNAME = credentials('anilvg')
+        DOCKER_PASSWORD = credentials('cipahane_V5')
     }
 
     stages {
@@ -15,18 +17,23 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Login to DockerHub') {
             steps {
                 script {
-                    sh 'docker build -t $DOCKER_IMAGE .'
+                    sh '''
+                    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    '''
                 }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Build & Push Docker Image') {
             steps {
-                withDockerRegistry([credentialsId: '46f234f6-70a8-4e6f-9b62-6723df022e2d', url: '']) {
-                    sh 'docker push $DOCKER_IMAGE'
+                script {
+                    sh '''
+                    docker buildx create --use
+                    docker buildx build --platform linux/amd64 -t $DOCKER_IMAGE . --push
+                    '''
                 }
             }
         }
